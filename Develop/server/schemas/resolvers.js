@@ -20,11 +20,10 @@ const resolvers = {
         const token = signToken(user);
         return { token, user };
       } catch (error) {
-        console.error(error);
-        throw new Error('Error creating user');
+        console.error("Error details:", error); // This will give a detailed error message
+        throw new Error(error.message); // This will send a more specific error to the client
       }
     },
-  
     login: async (parent, { email, password }) => {
       const user = await User.findOne({ email });
       if (!user) {
@@ -38,16 +37,29 @@ const resolvers = {
       return { token, user };
     },
     saveBook: async (parent, { bookData }, context) => {
-      if (context.user) {
-        const updatedUser = await User.findOneAndUpdate(
-          { _id: context.user._id },
-          { $addToSet: { savedBooks: bookData } },
-          { new: true }
-        );
-        return updatedUser;
+      // If there's no user in the context, throw an authentication error
+      if (!context.user) {
+        throw new AuthenticationError("You need to be logged in!");
       }
-      throw new Error("You need to be logged in!");
+
+      // Find the user using their ID from the context
+      const user = await User.findById(context.user._id);
+
+      // If the user is not found, throw an error
+      if (!user) {
+        throw new AuthenticationError("Cannot find this user");
+      }
+
+      // Push the new book data into the user's savedBooks array
+      user.savedBooks.push(bookData);
+
+      // Save the user document with the updated savedBooks array
+      await user.save();
+
+      // Return the updated user
+      return user;
     },
+
     removeBook: async (parent, { bookId }, context) => {
       if (context.user) {
         const updatedUser = await User.findOneAndUpdate(

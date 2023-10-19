@@ -10,24 +10,24 @@ module.exports = {
   },
 
   authMiddleware: function ({ req }) {
-    let token = req.headers.authorization || "";
+    // allows token to be sent via req.body, req.query, or headers
+    let token = req.body.token || req.query.token || req.headers.authorization;
 
-    // if no token, and it's not a signup or login request, throw an error
-    if (
-      !token &&
-      req.body.operationName !== "addUser" &&
-      req.body.operationName !== "login"
-    ) {
-      throw new Error("You have no token!");
+    // ["Bearer", "<tokenvalue>"]
+    if (req.headers.authorization) {
+      token = token.split(" ")[1];
     }
 
-    // attempt to verify the token and get a decoded token
-    // return updated request object
+    if (!token) {
+      return req;
+    }
+
     try {
       const { data } = jwt.verify(token, secret, { maxAge: expiration });
       req.user = data;
-    } catch {
-      console.log("Invalid token");
+    } catch (error) {
+      console.log("Invalid token:", error.message);
+      // Just log the error instead of throwing
     }
 
     return req;

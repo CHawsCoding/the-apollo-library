@@ -59,18 +59,21 @@ const SearchBooks = () => {
   const handleSaveBook = async (bookId) => {
     const bookToSave = searchedBooks.find((book) => book.bookId === bookId);
     try {
-        await saveBook({
-            variables: { bookData: { ...bookToSave } }
-        });
-        if (error) {
-            throw new Error('Something went wrong!');
-        }
+      const { data } = await saveBook({
+        variables: { bookData: { ...bookToSave } },
+      });
+  
+      if (data) {
+        console.log("Book saved:", data.saveBook);
+        // Update the savedBookIds state with the new bookId
         setSavedBookIds([...savedBookIds, bookId]);
+      }
     } catch (err) {
-        console.error(err);
-        setSearchedBooks([]);
+      console.error(err);
+      // Handle the error gracefully, e.g., display an error message to the user
+      // and possibly reset some state.
     }
-}
+  };
 
   return (
     <>
